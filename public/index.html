@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentBase</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.bootstrap3.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="card p-4 shadow-sm">
+            <div class="info-icon" data-toggle="modal" data-target="#infoModal">
+                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
+                    <path
+                        d="M12 0c6.623 0 12 5.377 12 12s-5.377 12-12 12-12-5.377-12-12 5.377-12 12-12zm0 1c6.071 0 11 4.929 11 11s-4.929 11-11 11-11-4.929-11-11 4.929-11 11-11zm.5 17h-1v-9h1v9zm-.5-12c.466 0 .845.378.845.845 0 .466-.379.844-.845.844-.466 0-.845-.378-.845-.844 0-.467.379-.845.845-.845z" />
+                </svg>
+            </div>
+            <div class="refresh-icon" onclick="location.reload();">
+                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
+                    <path
+                        d="M7 9h-7v-7h1v5.2c1.853-4.237 6.083-7.2 11-7.2 6.623 0 12 5.377 12 12s-5.377 12-12 12c-6.286 0-11.45-4.844-11.959-11h1.004c.506 5.603 5.221 10 10.955 10 6.071 0 11-4.929 11-11s-4.929-11-11-11c-4.66 0-8.647 2.904-10.249 7h5.249v1z" />
+                </svg>
+            </div>
+
+            <div class="header-container d-flex align-items-center justify-content-center mb-4">
+                <h1 class="text-center mb-0">AgentBase v1.0</h1>
+                <div id="statusIndicator" class="status-indicator ml-2"></div>
+            </div>
+            <form id="dataForm">
+                <div class="form-group">
+                    <label for="vid" class="form-label" style="color:black">Вид деятельности:</label>
+                    <select id="vid" name="vid" class="form-control" multiple required></select>
+                </div>
+                <div class="form-group">
+                    <label for="region" class="form-label" style="color:black">Регион:</label>
+                    <select id="region" name="region" class="form-control" multiple required></select>
+                </div>
+                <div class="form-group">
+                    <label for="money" class="form-label" style="color:black">Доход:</label>
+                    <select id="money" name="money" class="form-control" required></select>
+                </div>
+                <div class="text-center">
+                    <button type="button" id="fetchDataBtn" class="btn btn-primary">Собрать данные</button>
+                    <div id="checkingResources" style="display: none; color: grey;">Проверка доступности ресурсов...</div>
+                    <div id="resourceError" style="display: none; color: red;">Ошибка подключения к одному/нескольким ресурсу(ам)</div>
+                </div>
+            </form>
+
+            <div id="loading" style="display: none;" class="mt-3 text-center">
+                <p>Идет сбор данных в открытых источниках...</p>
+                <div class="spinner-container">
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+                <div id="progressContainer" style="display: none;">
+                    <div class="progress-bar-container" class="progress-container mt-3">
+                        <div id="progressBar" class="progress-bar"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Прогресс: 0%</div>
+                    <div class="progress-text" id="speedText">Скорость: 0 элементов/сек</div>
+                    <div id="remainingTimeText" class="progress-text">Оставшееся время: 0 секунд</div>
+                    <div class="progress-text" id="currentElementText">Текущий элемент: 0</div>
+                    <div class="progress-text" id="errorCountText">Количество ошибок: 0</div>
+                </div>
+            </div>
+
+            <div id="log" style="display: none; height: 100px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;"
+                class="mt-3">
+                <pre id="logContent" class="bg-light"></pre>
+            </div>
+
+            <div id="downloadOptions" style="display: none;" class="mt-3 text-center">
+                <p><strong>Кнопки загрузки отчетов:</strong></p>
+                <button id="downloadJsonBtn" class="btn btn-success">JSON</button>
+                <button id="downloadExcelBtn" class="btn btn-success ml-2">Excel</button>
+                <button id="downloadElmaBtn" class="btn btn-success ml-2">ELMA</button>
+            </div>
+        </div>
+
+        <div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="infoModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="infoModalLabel">Информация об "AgentBase"</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>ПО предоставляется для удобного <strong>сбора данных о юр. лицах</strong> по регионам и видам
+                            деятельности, с целью
+                            ознакомления с информацией.<br>Данные о юр. лицах берутся исключительно <strong>из открытых
+                                источников</strong>.</p>
+                        <p><strong>ЕГРЮЛ</strong> используется для сбора ОГРН всех действующих организаций по выбранным
+                            регионам и
+                            ораслям.<br><strong>Т-Банк.Бизнесс</strong> используется для поиска более подробной
+                            информации по всем ОГРН
+                            организаций.<br><strong>Чекко</strong> используется для сбора контактных данных.</p>
+                        <p>После сбора данных есть <strong>3 способа</strong> для их выгрузки:<br><strong>JSON</strong>
+                            - структурированные данные, наиболее удобны для выгрузки в базы
+                            данных.<br><strong>Excel</strong> - для отображения всех данных без фильтров как
+                            есть.<br><strong>ELMA</strong> - для выгрузки полученных данных в формате, пригодном для CRM
+                            ELMA (возможность выбрать фильтры).</p>
+                        <p>Ссылки на ресурсы:<br><a href="https://pb.nalog.ru" target="_blank">ЕГРЮЛ</a> | <a
+                                href="https://www.tbank.ru/business/contractor" target="_blank">Т-Банк.Бизнесс</a> | <a
+                                href="https://checko.ru" target="_blank">Чекко</a></p>
+                        <p><strong>ВАЖНО!!!</strong>
+                            <br><strong>После перезагрузки страницы данные удаляются!</strong>
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="rowCountModal" tabindex="-1" role="dialog" aria-labelledby="rowCountModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="rowCountModalLabel">Количество строк</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Количество строк: <span id="rowCount"></span></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" id="startFetchData">Запустить сбор</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="elmaModal" tabindex="-1" role="dialog" aria-labelledby="elmaModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="elmaModalLabel">Введите ФИО ответственного в ELMA</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <select id="fioSelect" class="form-control" placeholder="Выберите ФИО ответственного"></select>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="excludeNoPhones">
+                            <label class="form-check-label" for="excludeNoPhones">
+                                Исключить записи без номеров
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="excludeNoEmails">
+                            <label class="form-check-label" for="excludeNoEmails">
+                                Исключить записи без email
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="excludeNoWebsite">
+                            <label class="form-check-label" for="excludeNoWebsite">
+                                Исключить записи без сайта
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                        <button type="button" id="submitElma" class="btn btn-primary">Отправить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Модальное окно для статусов ресурсов -->
+    <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalLabel">Статусы ресурсов</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <ul id="statusList" class="list-group"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
